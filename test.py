@@ -1,3 +1,7 @@
+#125163546546
+# 
+# 
+# 
 import tkinter as tk #匯入 tkinter 並命名為 tk
 win = tk.Tk() #建立主視窗物件
 win.geometry("400x300") #設定視窗大小為 400x300像素
