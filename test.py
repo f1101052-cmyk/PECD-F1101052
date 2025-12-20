@@ -1,56 +1,140 @@
-#125163546546
-# 
-# 
-# 
-import tkinter as tk #匯入 tkinter 並命名為 tk
-win = tk.Tk() #建立主視窗物件
-win.geometry("400x300") #設定視窗大小為 400x300像素
-win.title("視窗程式") #設定視窗標題
-
-
-
-
-win.mainloop() #進入主事件迴圈
-
 import tkinter as tk
 from tkinter import messagebox
 
-# ===== 功能函式 =====
-def on_click():
-    label.config(text="妳很漂亮！")
+# =========================
+# 基本設定
+# =========================
+WINDOW_SIZE = 300       # 視窗大小
+GRID_SIZE = 3           # 3x3 棋盤
 
-def show_about():
-    messagebox.showinfo("About", "這是一個使用 Tkinter 建立的視窗程式範例。")
-
-def close_window():
-    root.destroy()
-
-# ===== 建立主視窗 =====
+# =========================
+# 主視窗
+# =========================
 root = tk.Tk()
-root.title("Tkinter 視窗程式")
-root.geometry("500x350")
+root.title("OOXX 遊戲")
+root.resizable(False, False)
 
-# ===== 建立選單列 =====
-menubar = tk.Menu(root)
+# =========================
+# 遊戲變數
+# =========================
+current_player = "X"    # 目前玩家
+game_over = False       # 是否結束
+board = [["" for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
+buttons = []            # 儲存按鈕
 
-# File 選單
-file_menu = tk.Menu(menubar, tearoff=0)
-file_menu.add_command(label="Exit", command=close_window)
-menubar.add_cascade(label="File", menu=file_menu)
+# =========================
+# 重新開始遊戲
+# =========================
+def reset_game():
+    global current_player, game_over
+    current_player = "X"
+    game_over = False
 
-# Help 選單
-help_menu = tk.Menu(menubar, tearoff=0)
-help_menu.add_command(label="About", command=show_about)
-menubar.add_cascade(label="Help", menu=help_menu)
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            board[r][c] = ""
+            buttons[r][c].config(text="", state="normal")
 
-root.config(menu=menubar)
+    status_label.config(text="目前輪到：X")
 
-# ===== 主介面元件 =====
-label = tk.Label(root, text="歡迎使用 Tkinter！", font=("Arial", 16))
-label.pack(pady=30)
+# =========================
+# 檢查是否獲勝
+# =========================
+def check_win(player):
+    # 檢查橫列
+    for row in board:
+        if all(cell == player for cell in row):
+            return True
 
-button = tk.Button(root, text="按我一下", font=("Arial", 14), command=on_click)
-button.pack()
+    # 檢查直行
+    for col in range(GRID_SIZE):
+        if all(board[row][col] == player for row in range(GRID_SIZE)):
+            return True
 
-# ===== 主迴圈 =====
+    # 檢查對角線
+    if all(board[i][i] == player for i in range(GRID_SIZE)):
+        return True
+
+    if all(board[i][GRID_SIZE - 1 - i] == player for i in range(GRID_SIZE)):
+        return True
+
+    return False
+
+# =========================
+# 檢查是否平手
+# =========================
+def check_draw():
+    return all(board[r][c] != "" for r in range(GRID_SIZE) for c in range(GRID_SIZE))
+
+# =========================
+# 點擊棋格事件
+# =========================
+def on_click(row, col):
+    global current_player, game_over
+
+    if game_over:
+        return
+
+    # 該格已被佔用
+    if board[row][col] != "":
+        return
+
+    # 放置棋子
+    board[row][col] = current_player
+    buttons[row][col].config(text=current_player)
+
+    # 判斷勝負
+    if check_win(current_player):
+        game_over = True
+        messagebox.showinfo("遊戲結束", f"{current_player} 獲勝！")
+        status_label.config(text=f"{current_player} 獲勝！")
+        return
+
+    # 判斷平手
+    if check_draw():
+        game_over = True
+        messagebox.showinfo("遊戲結束", "平手！")
+        status_label.config(text="平手！")
+        return
+
+    # 換玩家
+    current_player = "O" if current_player == "X" else "X"
+    status_label.config(text=f"目前輪到：{current_player}")
+
+# =========================
+# 建立棋盤按鈕
+# =========================
+board_frame = tk.Frame(root)
+board_frame.pack()
+
+for r in range(GRID_SIZE):
+    row_buttons = []
+    for c in range(GRID_SIZE):
+        btn = tk.Button(
+            board_frame,
+            text="",
+            width=6,
+            height=3,
+            font=("Arial", 20),
+            command=lambda r=r, c=c: on_click(r, c)
+        )
+        btn.grid(row=r, column=c)
+        row_buttons.append(btn)
+    buttons.append(row_buttons)
+
+# =========================
+# 狀態顯示
+# =========================
+status_label = tk.Label(root, text="目前輪到：X", font=("Arial", 14))
+status_label.pack(pady=5)
+
+# =========================
+# 重新開始按鈕
+# =========================
+reset_button = tk.Button(root, text="重新開始", command=reset_game)
+reset_button.pack(pady=5)
+
+# =========================
+# 啟動程式
+# =========================
 root.mainloop()
