@@ -1,75 +1,154 @@
-#第二版
+#第三版
 import tkinter as tk
 from tkinter import messagebox
+import random
 
-# 遊戲類別
-class TicTacToe:
+class MiyazakiTicTacToe:
     def __init__(self, root):
         self.root = root
-        self.root.title("OOXX 遊戲")
+        self.root.title("森林精靈井字遊戲")
+        self.root.configure(bg="#F5F1E8")
 
-        # 遊戲狀態
-        self.board = [""] * 9  # 棋盤 3x3
-        self.current_player = "X"
-        
-        # 建立棋盤按鈕
+        self.player = "🌱"
+        self.computer = "🐾"
+        self.board = [""] * 9
+        self.difficulty = None
+
+        self.create_start_menu()
+
+    # ===== 開始選單 =====
+    def create_start_menu(self):
+        self.clear_window()
+
+        title = tk.Label(
+            self.root,
+            text="🌿 森林精靈井字遊戲 🌿",
+            font=("Helvetica", 20, "bold"),
+            bg="#F5F1E8"
+        )
+        title.pack(pady=20)
+
+        tk.Label(
+            self.root,
+            text="請選擇難度",
+            font=("Helvetica", 14),
+            bg="#F5F1E8"
+        ).pack(pady=10)
+
+        tk.Button(
+            self.root, text="簡單 🌤",
+            font=("Helvetica", 14),
+            width=12,
+            command=lambda: self.start_game("easy")
+        ).pack(pady=5)
+
+        tk.Button(
+            self.root, text="困難 🌑",
+            font=("Helvetica", 14),
+            width=12,
+            command=lambda: self.start_game("hard")
+        ).pack(pady=5)
+
+    # ===== 開始遊戲 =====
+    def start_game(self, difficulty):
+        self.difficulty = difficulty
+        self.clear_window()
+        self.board = [""] * 9
         self.buttons = []
+
+        frame = tk.Frame(self.root, bg="#F5F1E8")
+        frame.pack()
+
         for i in range(9):
-            button = tk.Button(root, text="", width=10, height=3, font=("Arial", 20),
-                               command=lambda i=i: self.click_button(i))
-            button.grid(row=i//3, column=i%3)
-            self.buttons.append(button)
+            btn = tk.Button(
+                frame,
+                text="",
+                font=("Helvetica", 24),
+                width=4,
+                height=2,
+                bg="#FFFFFF",
+                command=lambda i=i: self.player_move(i)
+            )
+            btn.grid(row=i // 3, column=i % 3, padx=5, pady=5)
+            self.buttons.append(btn)
 
-        # 重新開始按鈕
-        self.restart_button = tk.Button(root, text="重新開始", width=10, height=2, font=("Arial", 14), command=self.restart)
-        self.restart_button.grid(row=3, column=0, columnspan=3)
+        tk.Button(
+            self.root,
+            text="重新開始 🍃",
+            font=("Helvetica", 12),
+            command=self.create_start_menu
+        ).pack(pady=15)
 
-    def click_button(self, index):
-        # 若該格已經有玩家選擇，則不進行操作
-        if self.board[index] != "":
-            return
+    # ===== 玩家行動 =====
+    def player_move(self, index):
+        if self.board[index] == "":
+            self.board[index] = self.player
+            self.buttons[index].config(text=self.player)
 
-        # 更新棋盤和按鈕
-        self.board[index] = self.current_player
-        self.buttons[index].config(text=self.current_player)
+            if self.check_winner(self.player):
+                messagebox.showinfo("結果", "🌱 你贏了！森林為你歡呼")
+                self.create_start_menu()
+                return
 
-        # 檢查遊戲是否結束
-        if self.check_winner():
-            messagebox.showinfo("遊戲結束", f"玩家 {self.current_player} 贏了!")
-            self.reset_board()
-        elif "" not in self.board:
-            messagebox.showinfo("遊戲結束", "平手！")
-            self.reset_board()
+            if "" not in self.board:
+                messagebox.showinfo("結果", "平手～森林保持平衡")
+                self.create_start_menu()
+                return
+
+            self.root.after(400, self.computer_move)
+
+    # ===== 電腦行動 =====
+    def computer_move(self):
+        if self.difficulty == "easy":
+            move = random.choice([i for i in range(9) if self.board[i] == ""])
         else:
-            # 換下一位玩家
-            self.current_player = "O" if self.current_player == "X" else "X"
+            move = self.smart_move()
 
-    def check_winner(self):
-        # 檢查所有可能的勝利組合
-        win_combinations = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],  # 橫向
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],  # 縱向
-            [0, 4, 8], [2, 4, 6]  # 斜向
-        ]
-        for combo in win_combinations:
-            if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != "":
-                return True
-        return False
+        self.board[move] = self.computer
+        self.buttons[move].config(text=self.computer)
 
-    def reset_board(self):
-        # 重置棋盤
+        if self.check_winner(self.computer):
+            messagebox.showinfo("結果", "🐾 森林精靈獲勝！")
+            self.create_start_menu()
+
+    # ===== 困難模式 AI =====
+    def smart_move(self):
         for i in range(9):
-            self.board[i] = ""
-            self.buttons[i].config(text="")
-        self.current_player = "X"
+            if self.board[i] == "":
+                self.board[i] = self.computer
+                if self.check_winner(self.computer):
+                    self.board[i] = ""
+                    return i
+                self.board[i] = ""
 
-    def restart(self):
-        # 重新開始遊戲
-        self.reset_board()
+        for i in range(9):
+            if self.board[i] == "":
+                self.board[i] = self.player
+                if self.check_winner(self.player):
+                    self.board[i] = ""
+                    return i
+                self.board[i] = ""
 
-# 建立視窗
+        return random.choice([i for i in range(9) if self.board[i] == ""])
+
+    # ===== 勝利判斷 =====
+    def check_winner(self, symbol):
+        wins = [
+            [0,1,2], [3,4,5], [6,7,8],
+            [0,3,6], [1,4,7], [2,5,8],
+            [0,4,8], [2,4,6]
+        ]
+        return any(all(self.board[i] == symbol for i in combo) for combo in wins)
+
+    # ===== 清畫面 =====
+    def clear_window(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+
+# 啟動程式
 root = tk.Tk()
-game = TicTacToe(root)
+root.resizable(False, False)
+game = MiyazakiTicTacToe(root)
 root.mainloop()
-
 
